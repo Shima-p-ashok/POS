@@ -13,11 +13,11 @@ class CustomerService {
     return HttpService.callApi(API_ENDPOINTS.CUSTOMER.GET_BY_ID(id), "GET");
   }
 
-  static async create(data: Customer): Promise<CustomResponse<Customer>> {
+  static async create(data: Record<string, unknown>): Promise<CustomResponse<Customer>> {
     return HttpService.callApi(API_ENDPOINTS.CUSTOMER.CREATE, "POST", data);
   }
 
-  static async update(id: number, data: Customer): Promise<CustomResponse<Customer>> {
+  static async update(id: number, data: Record<string, unknown>): Promise<CustomResponse<Customer>> {
     return HttpService.callApi(API_ENDPOINTS.CUSTOMER.UPDATE(id), "PUT", data);
   }
 

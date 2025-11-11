@@ -52,8 +52,9 @@ const KiduButton: React.FC<KiduButtonProps> = ({ label, to, className, style }) 
       style={{
         background: "linear-gradient(90deg, rgba(59,130,246,1))",
         border: "none",
-        borderRadius: "25px",
-        padding: "10px 20px",
+        borderRadius: "6px", 
+        padding: "8px 16px", 
+        display: "inline-block",
         ...style,
       }}
       onClick={handleClick}

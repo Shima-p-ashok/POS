@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Modal, Table, Button, Form, InputGroup } from "react-bootstrap";
 import HttpService from "../services/Common/HttpService";
 import type { CustomResponse } from "../types/Common/ApiTypes";
@@ -12,7 +12,7 @@ interface KiduPopupProps<T> {
   title?: string;
   onSelect?: (item: T) => void;
 }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const KiduPopup = <T extends Record<string, any>>({
   show,
   handleClose,
@@ -29,6 +29,7 @@ const KiduPopup = <T extends Record<string, any>>({
     if (show) {
       HttpService.callApi<CustomResponse<T[]>>(apiEndpoint, "GET")
         .then((res) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if ((res.isSuccess || (res as any).isSucess) && res.value) {
             setData(res.value);
           }

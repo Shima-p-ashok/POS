@@ -3,19 +3,19 @@ import Swal from "sweetalert2";
 import { useNavigate, useParams } from "react-router-dom";
 import CustomerService from "../../services/CustomerService";
 import KiduCreateAndEdit from "../../components/KiduCreateAndEdit";
-import KiduPrevious from "../../components/KiduPrevious";
-import KiduAttachments from "../../components/KiduAttachments"; // ✅ import
+import KiduAttachments from "../../components/KiduAttachments";
+import KiduAuditLog from "../../components/KiduAuditLogs"; 
 import type { Customer } from "../../types/Customer.types";
 
 const customerFields = [
-  { name: "customerId", label: "Customer ID", type: "number", required: true },
+  { name: "customerId", label: "Customer ID", type: "number", readOnly: true },
   { name: "customerName", label: "Customer Name", type: "text", required: true },
   { name: "contactPerson", label: "Contact Person", type: "text", required: true },
   { name: "phoneNo", label: "Phone No", type: "text", required: true },
   { name: "email", label: "Email", type: "email", required: true },
-  { name: "website", label: "Website", type: "text" },
-  { name: "address", label: "Address", type: "textarea", required: true },
-  { name: "gstNumber", label: "GST / Tax No", type: "text" },
+  { name: "website", label: "Website", type: "text", required: true },
+  { name: "gstNumber", label: "GST / Tax No", type: "text", required: true },
+  { name: "address", label: "Address", type: "text", as: "textarea" as const, required: true },
 ];
 
 const CustomerEdit: React.FC = () => {
@@ -24,7 +24,6 @@ const CustomerEdit: React.FC = () => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch customer by ID
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
@@ -36,8 +35,7 @@ const CustomerEdit: React.FC = () => {
           throw new Error(res.message || "Failed to load customer data");
         }
       } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.message : "Failed to fetch details.";
+        const message = error instanceof Error ? error.message : "Failed to fetch details.";
         Swal.fire("Error", message, "error");
         navigate("/customers");
       } finally {
@@ -47,12 +45,11 @@ const CustomerEdit: React.FC = () => {
     fetchCustomer();
   }, [id, navigate]);
 
-  // ✅ Update handler
-  const handleUpdate = async (data: Partial<Customer>) => {
+  const handleUpdate = async (data: Partial<Record<string, unknown>>) => {
     try {
       if (!id) throw new Error("Customer ID missing");
       setLoading(true);
-      const res = await CustomerService.update(Number(id), data as Customer);
+      const res = await CustomerService.update(Number(id), data);
       Swal.fire({
         title: "Success!",
         text: res.message || "Customer updated successfully.",
@@ -61,8 +58,7 @@ const CustomerEdit: React.FC = () => {
       });
       navigate("/customers");
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to update customer.";
+      const message = error instanceof Error ? error.message : "Failed to update customer.";
       Swal.fire({
         title: "Error!",
         text: message,
@@ -74,28 +70,32 @@ const CustomerEdit: React.FC = () => {
     }
   };
 
-  if (loading) return <p className="text-center mt-4">Loading...</p>;
-  if (!customer) return <p className="text-center mt-4">Customer not found.</p>;
+  if (loading) return <p className="text-center mt-5">Loading customer details...</p>;
+  if (!customer) return <p className="text-center mt-5">Customer not found.</p>;
 
   const recordId = customer.customerId;
 
   return (
-    <div style={{ minHeight: "100vh", padding: "20px", backgroundColor: "#f3f3f3" }}>
-      <KiduPrevious />
+    <div style={{ minHeight: "100vh", padding: "20px", backgroundColor: "#ffffff" }}>
       <KiduCreateAndEdit
         key={recordId}
-        title="Customer"
+        title="Edit Customer"
         fields={customerFields}
         initialData={customer as unknown as Record<string, string | number | boolean>}
         onSubmit={handleUpdate}
         loading={loading}
       />
 
-      {/* ✅ Attachments section */}
       {recordId && (
-        <div className="mt-4">
-          <KiduAttachments tableName="Customer" recordId={recordId} />
-        </div>
+        <>
+          <div className="mt-4">
+            <KiduAttachments tableName="Customer" recordId={recordId} />
+          </div>
+
+          <div className="mt-4">
+            <KiduAuditLog tableName="Customer" recordId={recordId} />
+          </div>
+        </>
       )}
     </div>
   );

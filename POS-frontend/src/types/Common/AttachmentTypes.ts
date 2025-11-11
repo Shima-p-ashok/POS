@@ -1,35 +1,19 @@
-// src/types/Attachment.types.ts
+// src/types/Common/AttachmentTypes.ts
 
 export interface Attachment {
   attachmentId: number;
-  tableName: string;
-  recordId: number;
-  fileName: string;
+  attachmentType: string;       // ".png", ".jpg", etc. (backend field)
+  attachmentPath: string;       // full path from backend
+  description: string;
   filePath: string;
-  fileSize: number;
+  fileName: string;
   fileType: string;
-  description?: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  updatedAt?: string;
-}
-
-export interface AttachmentUploadRequest {
-  file: File;
   tableName: string;
-  recordId: number;
-  description?: string;
-}
-
-export interface AttachmentResponse {
-  success: boolean;
-  message: string;
-  data?: Attachment;
-  error?: string;
-}
-
-export interface AttachmentListResponse {
-  success: boolean;
-  data: Attachment[];
-  total: number;
+  recordID: number;             // matches backend field
+  uploadedBy: string;
+  uploaddedOn: string;          // matches backend field (typo in backend)
+  updatedOn?: string;           // optional, if backend returns updated timestamp
+  isDeleted: boolean;
+  deletedOn: string | null;
+  deletedBy: string;
 }

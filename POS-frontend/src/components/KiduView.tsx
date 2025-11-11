@@ -1,7 +1,7 @@
-// src/components/KiduView.tsx
 import React from "react";
-import { Container, Row, Col, Table, Button, Spinner } from "react-bootstrap";
+import { Table, Button, Spinner, Card } from "react-bootstrap";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import KiduPrevious from "./KiduPrevious";
 
 interface Field<T> {
   key: keyof T;
@@ -16,6 +16,7 @@ interface KiduViewProps<T> {
   onEdit?: () => void;
   onDelete?: () => void;
   formatDate?: (dateStr?: string) => string;
+  smallReadOnlyFields?: (keyof T)[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,6 +28,7 @@ function KiduView<T extends Record<string, any>>({
   onEdit,
   onDelete,
   formatDate,
+  smallReadOnlyFields = [],
 }: KiduViewProps<T>) {
   if (loading)
     return (
@@ -42,71 +44,110 @@ function KiduView<T extends Record<string, any>>({
       </div>
     );
 
+  // === Detect common "name" and "id" fields ===
+  const nameKey = (Object.keys(data).find(k =>
+    ["name", "customerName", "fullName"].includes(k)
+  ) || "") as keyof T;
+
+  const idKey = (Object.keys(data).find(k =>
+    ["id", "customerId", "userId"].includes(k)
+  ) || "") as keyof T;
+
   return (
-    <Container
-      className="p-4 mt-3 shadow-sm rounded"
-      style={{ backgroundColor: "white", fontFamily: "Urbanist" }}
-    >
-      {/* Header */}
-      <Row className="mb-4 align-items-center">
-        <Col>
-          <h4 className="fw-bold mb-0">{title}</h4>
-        </Col>
-        <Col className="text-end">
+    <Card className="mx-2 my-3 shadow-sm rounded-3">
+      {/* === Header === */}
+      <Card.Header
+        className="d-flex align-items-center justify-content-between"
+        style={{ backgroundColor: "#3B82F6", color: "white", padding: "0.25rem 0.75rem" }}
+      >
+        <div className="d-flex align-items-center gap-3">
+          <KiduPrevious />
+          <h5 className="mb-0 fw-bold">{title}</h5>
+        </div>
+
+        <div className="d-flex align-items-center gap-2">
           {onEdit && (
             <Button
-              className="me-2"
+              className="d-flex align-items-center gap-1"
               style={{
-                backgroundColor: "#3085d6",
+                backgroundColor: "#ffffffff",
+                color: "#3B82F6",
                 border: "none",
                 fontWeight: 500,
               }}
               onClick={onEdit}
             >
-              <FaEdit className="me-1" /> Edit
+              <FaEdit size={15} /> Edit
             </Button>
           )}
           {onDelete && (
-            <Button variant="danger" onClick={onDelete} disabled={loading}>
-              {loading ? <Spinner size="sm" /> : <FaTrash className="me-1" />}
-              Delete
+            <Button
+              className="d-flex align-items-center gap-1"
+              style={{
+                backgroundColor: "#EF4444",
+                border: "none",
+                fontWeight: 500,
+                color: "white",
+              }}
+              onClick={onDelete}
+            >
+              <FaTrash size={15} /> Delete
             </Button>
           )}
-        </Col>
-      </Row>
+        </div>
+      </Card.Header>
 
-      {/* Details Table */}
-      <div className="table-responsive">
-        <Table bordered hover responsive className="align-middle mb-0">
-          <tbody>
-            {fields.map(({ key, label }) => {
-              let value: React.ReactNode = data[key] ?? "-";
+      {/* === Body === */}
+      <Card.Body style={{ backgroundColor: "#fff", padding: "2rem", fontFamily: "Urbanist" }}>
+        {/* === Centered name + ID === */}
+        <div className="text-center mb-4">
+          <h5 className="fw-bold mb-1" >
+            {data[nameKey] || "-"}
+          </h5>
+          {idKey && (
+            <div  style={{color: "#ff1d1dff", fontSize: "0.9rem" }}>
+              <strong>ID :</strong>{" "}
+              <span style={{ color: "#ff1d1dff", fontWeight: 600 }}>
+                {data[idKey] || "-"}
+              </span>
+            </div>
+          )}
+        </div>
 
-              // Optional formatting for date fields
-              if (
-                (String(key).toLowerCase().includes("date") ||
-                  key === "createdAt") &&
-                typeof data[key] === "string"
-              ) {
-                value = formatDate ? formatDate(data[key]) : data[key];
-              }
+        {/* === Table === */}
+        <div className="table-responsive">
+          <Table bordered hover responsive className="align-middle mb-0">
+            <tbody>
+              {fields
+                .filter(f => !smallReadOnlyFields.includes(f.key))
+                .map(({ key, label }) => {
+                  let value: React.ReactNode = data[key] ?? "-";
 
-              // Boolean handling
-              if (typeof data[key] === "boolean") {
-                value = data[key] ? "Yes" : "No";
-              }
+                  if (
+                    (String(key).toLowerCase().includes("date") || key === "createdAt") &&
+                    typeof data[key] === "string"
+                  ) {
+                    value = formatDate ? formatDate(data[key]) : data[key];
+                  }
 
-              return (
-                <tr key={String(key)}>
-                  <td className="fw-semibold">{label}</td>
-                  <td>{value}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
-    </Container>
+                  if (typeof data[key] === "boolean") {
+                    value = data[key] ? "Yes" : "No";
+                  }
+
+                  return (
+                    <tr key={String(key)}>
+                      <td style={{ width: "40%", color: "#000000ff", fontWeight: 800 }}>
+                        {label}
+                      </td>
+                      <td style={{ color: "#000" }}>{value}</td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </Table>
+        </div>
+      </Card.Body>
+    </Card>
   );
 }
 

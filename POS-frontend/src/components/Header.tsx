@@ -36,23 +36,16 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className="d-flex align-items-center justify-content-between px-4 py-3 shadow"
+      className="d-flex align-items-center justify-content-between px-3 py-2 shadow"
       style={{
         background:
           "linear-gradient(90deg, rgba(79,70,229,1) 0%, rgba(139,92,246,1) 50%, rgba(59,130,246,1) 100%)",
         color: "white",
       }}
     >
-      {/* Left Section - Logo + Title */}
-      <div className="d-flex align-items-center gap-3">
-        <div
-          className="fw-bold px-3 py-1 rounded text-primary bg-white"
-          style={{ fontSize: "1.1rem" }}
-        >
-          POS
-        </div>
-       
-      </div>
+      <div className="d-flex align-items-center">
+  <h4 className="fw-bold mb-0 text-white">POS</h4>
+</div>
 
       {/* Center Section - Search Bar */}
       <div className="flex-grow-1 mx-5" style={{ maxWidth: "550px" }}>

@@ -1,10 +1,8 @@
-// src/pages/Customers/CustomerView.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import CustomerService from "../../services/CustomerService";
 import type { Customer } from "../../types/Customer.types";
-import KiduPrevious from "../../components/KiduPrevious";
 import KiduView from "../../components/KiduView";
 
 const customerFields: { key: keyof Customer; label: string }[] = [
@@ -42,26 +40,13 @@ const CustomerView: React.FC = () => {
       setLoading(true);
       try {
         const res = await CustomerService.getById(Number(id));
-        console.log("Customer by ID Response:", res);
-
         if (res?.isSuccess && res?.value) {
           setData(res.value);
         } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: res?.message || "Failed to fetch customer details.",
-          });
+          Swal.fire({ icon: "error", title: "Error", text: res?.message || "Failed to fetch customer details." });
         }
       } catch (err: unknown) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text:
-            err instanceof Error
-              ? err.message
-              : "Error fetching customer details.",
-        });
+        Swal.fire({ icon: "error", title: "Error", text: err instanceof Error ? err.message : "Error fetching customer details." });
       } finally {
         setLoading(false);
       }
@@ -91,11 +76,7 @@ const CustomerView: React.FC = () => {
             Swal.fire("Error", res?.message || "Delete failed.", "error");
           }
         } catch (err: unknown) {
-          Swal.fire(
-            "Error",
-            err instanceof Error ? err.message : "Delete error.",
-            "error"
-          );
+          Swal.fire("Error", err instanceof Error ? err.message : "Delete error.", "error");
         } finally {
           setLoading(false);
         }
@@ -105,7 +86,6 @@ const CustomerView: React.FC = () => {
 
   return (
     <div className="bg-light" style={{ minHeight: "100vh", padding: "20px" }}>
-      <KiduPrevious />
       <KiduView<Customer>
         title="Customer Details"
         data={data}
@@ -114,6 +94,7 @@ const CustomerView: React.FC = () => {
         onEdit={() => navigate(`/customers-edit/${data?.customerId}`)}
         onDelete={handleDelete}
         formatDate={formatDate}
+        smallReadOnlyFields={["customerId"]}
       />
     </div>
   );

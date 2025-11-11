@@ -1,8 +1,10 @@
-import React from "react";
-import { Table, Container, Row, Col, Button } from "react-bootstrap";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Table, Container, Row, Col, Button, Pagination } from "react-bootstrap";
 import { FaEdit, FaEye } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import KiduButton from "../components/KiduButton";
+import KiduDownload from "../components/KiduDownload";
+import KiduSearchBar from "../components/KiduSearchBar";
 
 interface Column {
   key: string;
@@ -10,146 +12,240 @@ interface Column {
 }
 
 interface KiduTableProps {
-  title: string;
   columns: Column[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any[];
   addButtonLabel?: string;
   showActions?: boolean;
+  showSearch?: boolean;
   onAddClick?: () => void;
-  viewRoute?: string; // e.g., "/customers-view/:id"
-  editRoute?: string; // e.g., "/customers-edit/:id"
-  idKey?: string; // ✅ NEW PROP for dynamic ID field (default = "customerId")
+  viewRoute?: string;
+  editRoute?: string;
+  idKey?: string;
+  isServerSide?: boolean;
+  onSearchChange?: (searchTerm: string) => void;
+  onPageChange?: (page: number) => void;
+  totalRecords?: number;
+  currentServerPage?: number;
 }
 
 const KiduTable: React.FC<KiduTableProps> = ({
-  title,
   columns,
   data,
   addButtonLabel,
   showActions = true,
+  showSearch = true,
   viewRoute,
   editRoute,
-  idKey = "customerId", // ✅ default
+  idKey = "id",
+  isServerSide = false,
+  onSearchChange,
+  onPageChange,
+  totalRecords,
+  currentServerPage,
 }) => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(currentServerPage || 1);
+  const rowsPerPage = 10;
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  // 🧠 Reverse data only once with stable reference (client-side only)
+  const reversedData = useMemo(() => {
+    return isServerSide ? data : [...data].reverse();
+  }, [data, isServerSide]);
+
+  // 🔍 Filter logic with memoization (client-side only)
+  const filteredData = useMemo(() => {
+    if (isServerSide) return data;
+    return reversedData.filter((item) =>
+      columns.some((col) =>
+        String(item[col.key] || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [reversedData, columns, searchTerm, isServerSide, data]);
+
+  // 📄 Pagination logic
+  const totalPages = isServerSide 
+    ? Math.ceil((totalRecords || 0) / rowsPerPage)
+    : Math.ceil(filteredData.length / rowsPerPage);
+  
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const currentData = isServerSide ? data : filteredData.slice(startIndex, startIndex + rowsPerPage);
+
+  // Reset to page 1 only when search term changes or data changes (client-side only)
+  useEffect(() => {
+    if (!isServerSide) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm, data.length, isServerSide]);
+
+  // Sync with server page when in server-side mode
+  useEffect(() => {
+    if (isServerSide && currentServerPage) {
+      setCurrentPage(currentServerPage);
+    }
+  }, [currentServerPage, isServerSide]);
+
+  // Ensure current page is valid after filtering (client-side only)
+  useEffect(() => {
+    if (!isServerSide && currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages, isServerSide]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      
+      // Call parent callback for server-side pagination
+      if (isServerSide && onPageChange) {
+        onPageChange(page);
+      }
+      
+      // Scroll to table top smoothly
+      if (tableRef.current) {
+        tableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
+
+  const handleSearch = (val: string) => {
+    setSearchTerm(val);
+    
+    // Call parent callback for server-side search
+    if (isServerSide && onSearchChange) {
+      onSearchChange(val);
+    }
+  };
 
   return (
     <Container fluid className="p-1 mt-3" style={{ fontFamily: "Urbanist" }}>
-      {/* Title & Add Button */}
-      <Row className="mb-3 ms-3 me-3 align-items-center justify-content-between">
-        <Col xs="12" md="6">
-          <h4
-            className="fw-bold"
-            style={{
-              WebkitBackgroundClip: "text",
-              color: "rgba(0, 0, 0, 1)",
-            }}
-          >
-            {title}
-          </h4>
-        </Col>
-        {addButtonLabel && (
-          <Col
-            xs="12"
-            md="auto"
-            className="d-flex justify-content-md-end justify-content-start mt-2 mt-md-0"
-          >
-            <KiduButton label={addButtonLabel} />
-          </Col>
-        )}
-      </Row>
+      {/* 🔍 Search Bar + Add Button */}
+      {(showSearch || addButtonLabel) && (
+        <Row className="mb-3 px-3 align-items-center justify-content-between">
+          {showSearch && (
+            <Col xs={12} md={6} className="p-0">
+              <KiduSearchBar
+                onSearch={handleSearch}
+                placeholder="Search records..."
+              />
+            </Col>
+          )}
+          {addButtonLabel && (
+            <Col
+              xs="12"
+              md="auto"
+              className="d-flex justify-content-md-end justify-content-start p-0 mt-2 mt-md-0"
+            >
+              <KiduButton label={addButtonLabel}  />
+            </Col>
+          )}
+        </Row>
+      )}
 
-      {/* Table */}
-      <div className="table-responsive shadow-sm rounded-4 bg-white">
-        <Table bordered hover responsive className="align-middle mb-0">
-          <thead
-            style={{
-              background: "linear-gradient(90deg, #4F46E5, #8B5CF6, #3B82F6)",
-              color: "white",
-            }}
-          >
+      {/* 📊 Table */}
+      <div 
+        ref={tableRef}
+        className="table-responsive shadow-sm rounded-4 bg-white"
+      >
+        <Table
+          striped
+          bordered
+          hover
+          responsive
+          className="align-middle mb-0"
+          style={{ border: "2px solid #dee2e6" }}
+        >
+          <thead>
             <tr>
               {columns.map((col) => (
-                <th key={col.key} className="text-uppercase fw-semibold">
+                <th
+                  key={col.key}
+                  className="bg-light text-uppercase fw-semibold"
+                  style={{ border: "2px solid #dee2e6" }}
+                >
                   {col.label}
                 </th>
               ))}
-              {showActions && <th className="text-center">Actions</th>}
+              {showActions && (
+                <th className="text-center bg-light">
+                  <div className="d-flex align-items-center justify-content-center gap-2">
+                    <span>ACTION</span>
+                    {data.length > 0 && (
+                      <KiduDownload
+                        data={data}
+                        filename={`table.csv`}
+                        style={{
+                          width: "36px",
+                          height: "36px",
+                          padding: "6px",
+                        }}
+                      />
+                    )}
+                  </div>
+                </th>
+              )}
             </tr>
           </thead>
+
           <tbody>
-            {data.length > 0 ? (
-              [...data].reverse().map((item, index) => {
-                const recordId = item[idKey]; //dynamically pick ID field
+            {currentData.length > 0 ? (
+              currentData.map((item, index) => {
+                const recordId = item[idKey];
                 return (
                   <tr key={index}>
                     {columns.map((col) => (
-                      <td key={col.key}>{item[col.key]}</td>
+                      <td key={col.key} style={{ border: "2px solid #dee2e6" }}>
+                        {item[col.key] ?? "-"}
+                      </td>
                     ))}
                     {showActions && (
-                      <td className="text-center">
+                      <td
+                        className="text-center"
+                        style={{ border: "2px solid #dee2e6" }}
+                      >
                         <div className="d-flex justify-content-center gap-2 flex-wrap">
-                          {/* View Button */}
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              viewRoute &&
-                              recordId &&
-                              navigate(viewRoute.replace(":id", recordId.toString()))
-                            }
-                            style={{
-                              backgroundColor: "transparent",
-                              border: "1px solid #3B82F6",
-                              color: "#3B82F6",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background =
-                                "linear-gradient(90deg, rgba(59,130,246,1))";
-                              e.currentTarget.style.color = "white";
-                              e.currentTarget.style.transform = "scale(1.05)";
-                              e.currentTarget.style.boxShadow =
-                                "0 4px 10px rgba(59,130,246,0.3)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "transparent";
-                              e.currentTarget.style.color = "#3B82F6";
-                              e.currentTarget.style.transform = "scale(1)";
-                              e.currentTarget.style.boxShadow = "none";
-                            }}
-                          >
-                            <FaEye className="me-1" /> View
-                          </Button>
-
-                          {/* Edit Button */}
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              if (editRoute && recordId) {
-                                const target = editRoute.replace(":id", recordId.toString());
-                                console.log("Navigating to:", target);
-                                navigate(target);
+                          {viewRoute && (
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                recordId &&
+                                navigate(
+                                  viewRoute.replace(":id", recordId.toString())
+                                )
                               }
-                            }}
-                            style={{
-                              background: "linear-gradient(90deg, rgba(59,130,246,1))",
-                              border: "none",
-                              color: "white",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "scale(1.05)";
-                              e.currentTarget.style.boxShadow =
-                                "0 4px 12px rgba(79,70,229,0.4)";
-                              e.currentTarget.style.filter = "brightness(1.1)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "scale(1)";
-                              e.currentTarget.style.boxShadow = "none";
-                              e.currentTarget.style.filter = "brightness(1)";
-                            }}
-                          >
-                            <FaEdit className="me-1" /> Edit
-                          </Button>
+                              style={{
+                                backgroundColor: "transparent",
+                                border: "1px solid #3B82F6",
+                                color: "#3B82F6",
+                              }}
+                            >
+                              <FaEye className="me-1" /> View
+                            </Button>
+                          )}
+
+                          {editRoute && (
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                recordId &&
+                                navigate(
+                                  editRoute.replace(":id", recordId.toString())
+                                )
+                              }
+                              style={{
+                                background:
+                                  "linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)",
+                                border: "none",
+                                color: "white",
+                              }}
+                            >
+                              <FaEdit className="me-1" /> Edit
+                            </Button>
+                          )}
                         </div>
                       </td>
                     )}
@@ -161,14 +257,50 @@ const KiduTable: React.FC<KiduTableProps> = ({
                 <td
                   colSpan={columns.length + (showActions ? 1 : 0)}
                   className="text-center py-4 text-muted"
+                  style={{ border: "2px solid #dee2e6" }}
                 >
-                  No data available
+                  No matching records found
                 </td>
               </tr>
             )}
           </tbody>
         </Table>
       </div>
+
+      {/* 📄 Centered Pagination */}
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center align-items-center mt-4">
+          <Pagination>
+            <Pagination.First
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(1)}
+            />
+            <Pagination.Prev
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            />
+
+            {Array.from({ length: totalPages }, (_, idx) => (
+              <Pagination.Item
+                key={idx + 1}
+                active={idx + 1 === currentPage}
+                onClick={() => handlePageChange(idx + 1)}
+              >
+                {idx + 1}
+              </Pagination.Item>
+            ))}
+
+            <Pagination.Next
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+            />
+            <Pagination.Last
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(totalPages)}
+            />
+          </Pagination>
+        </div>
+      )}
     </Container>
   );
 };
