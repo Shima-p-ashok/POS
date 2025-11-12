@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
       
       <Container fluid className="py-4 px-4">
         <div className="text-center mb-4">
-          <h3 className="fw-bold text-primary mb-1">📊 Dashboard</h3>
+          <h3 className="fw-bold text-primary mb-1">📊 Control Panel</h3>
           <p className="text-muted mb-0">
             Access your control panel and manage all business modules
           </p>

@@ -1,10 +1,11 @@
+// CustomerEdit.tsx
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate, useParams } from "react-router-dom";
 import CustomerService from "../../services/CustomerService";
-import KiduCreateAndEdit from "../../components/KiduCreateAndEdit";
+import KiduEdit from "../../components/KiduEdit";
 import KiduAttachments from "../../components/KiduAttachments";
-import KiduAuditLog from "../../components/KiduAuditLogs"; 
+import KiduAuditLog from "../../components/KiduAuditLogs";
 import type { Customer } from "../../types/Customer.types";
 
 const customerFields = [
@@ -77,7 +78,7 @@ const CustomerEdit: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100vh", padding: "20px", backgroundColor: "#ffffff" }}>
-      <KiduCreateAndEdit
+      <KiduEdit
         key={recordId}
         title="Edit Customer"
         fields={customerFields}

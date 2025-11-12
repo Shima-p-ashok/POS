@@ -67,6 +67,6 @@ export const API_ENDPOINTS = {
     GET_BY_ID: (logID: string) =>
       `${API_BASE_URL1}/AuditLog/${encodeURIComponent(logID)}`,
   },
-
+  
 
 };

@@ -41,7 +41,7 @@ const CustomerList: React.FC = () => {
       </div>
     );
   }
-
+  
   return (
     <div className="bg-light" style={{ minHeight: "100vh", padding: "20px" }}>
       {/* Header Row */}

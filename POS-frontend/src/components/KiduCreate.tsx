@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, Row, Col, Form, Button } from "react-bootstrap";
+import { Card, Row, Col, Form, Button, InputGroup } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
+import { BsSearch } from "react-icons/bs";
 import KiduPrevious from "./KiduPrevious";
 
 interface FieldShape {
@@ -12,45 +13,47 @@ interface FieldShape {
   options?: string[];
   placeholder?: string;
   required?: boolean;
-  readOnly?: boolean; // <-- mark field as read-only
+  readOnly?: boolean;
 }
 
-interface KiduCreateAndEditProps {
+interface PopupHandlers {
+  [key: string]: {
+    value: string;          // text to show in field (like categoryName)
+    onOpen: () => void;     // function to open popup
+  };
+}
+
+interface KiduCreateProps {
   title: string;
   fields: FieldShape[];
   onSubmit: (formData: Record<string, unknown>) => void;
   loading?: boolean;
   submitText?: string;
-  initialData?: Record<string, unknown>;
   children?: React.ReactNode;
+  popupHandlers?: PopupHandlers; // ✅ added
 }
 
-const KiduCreateAndEdit: React.FC<KiduCreateAndEditProps> = ({
+const KiduCreate: React.FC<KiduCreateProps> = ({
   title,
   fields,
   onSubmit,
   loading = false,
   submitText = "Create",
-  initialData = {},
   children,
+  popupHandlers = {},
 }) => {
-  const [formData, setFormData] = useState<Record<string, unknown>>(() => {
-    const temp: Record<string, unknown> = {};
-    fields.forEach(f => (temp[f.name] = initialData[f.name] ?? ""));
-    return temp;
-  });
-
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isEditMode, setIsEditMode] = useState(() => Object.keys(initialData).length > 0);
 
   useEffect(() => {
     const temp: Record<string, unknown> = {};
-    fields.forEach(f => (temp[f.name] = initialData[f.name] ?? ""));
+    fields.forEach(f => (temp[f.name] = ""));
     setFormData(temp);
-    setIsEditMode(Object.keys(initialData).length > 0);
-  }, [JSON.stringify(fields), JSON.stringify(initialData)]);
+  }, [fields]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
@@ -58,27 +61,17 @@ const KiduCreateAndEdit: React.FC<KiduCreateAndEditProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
     fields.forEach(f => {
       const value = (formData[f.name] as string) || "";
-
-      if (f.required && !value) {
-        newErrors[f.name] = `${f.label} is required`;
-      }
-
-      // ✅ Extra: Email format validation
+      if (f.required && !value && f.type !== "popup") newErrors[f.name] = `${f.label} is required`;
       if (f.type === "email" && value) {
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailPattern.test(value)) {
-          newErrors[f.name] = "Please enter a valid email address";
-        }
+        if (!emailPattern.test(value)) newErrors[f.name] = "Please enter a valid email address";
       }
     });
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,44 +98,56 @@ const KiduCreateAndEdit: React.FC<KiduCreateAndEditProps> = ({
     <Card className="mx-2 my-3 shadow-sm rounded-3">
       <Card.Header
         className="d-flex align-items-center gap-3"
-        style={{ backgroundColor: "#3B82F6", color: "white", padding: "0.25rem 0.75rem" }}
+        style={{
+          backgroundColor: "#3B82F6",
+          color: "white",
+          padding: "0.25rem 0.75rem",
+        }}
       >
         <KiduPrevious />
         <h5 className="mb-0 fw-bold">{title}</h5>
       </Card.Header>
 
-      <Card.Body style={{ backgroundColor: "#f7f7f7ff", padding: "1.5rem", fontFamily: "Urbanist" }}>
+      <Card.Body
+        style={{
+          backgroundColor: "#f7f7f7ff",
+          padding: "1.5rem",
+          fontFamily: "Urbanist",
+        }}
+      >
         <Form onSubmit={handleSubmit}>
-          {/* === Render read-only fields at top === */}
-          {fields.filter(f => f.readOnly).map((field, idx) => {
-            const readOnlyStyle = { color: "red", backgroundColor: "#f8f8f8", fontWeight: 600 };
-            return (
-              <div key={idx} className="mb-3">
-                <Form.Label className="fw-semibold">{field.label}</Form.Label>
-                <Form.Control
-                  type={field.type}
-                  name={field.name}
-                  value={(formData[field.name] as string) ?? ""}
-                  readOnly
-                  style={readOnlyStyle}
-                  title="This field cannot be edited"
-                />
-              </div>
-            );
-          })}
-
           <Row>
-            {/* === Render non-readonly fields below === */}
-            {fields.filter(f => !f.readOnly).map((field, idx) => {
+            {fields.map((field, idx) => {
+              const popup = popupHandlers[field.name];
               const isTextarea = field.as === "textarea";
               const isSelect = field.as === "select" && field.options;
+              const isPopup = field.type === "popup" && popup;
+
               return (
                 <Col key={idx} xs={12} md={6} className="mb-3">
                   <Form.Label className="fw-semibold">
-                    {field.label} {field.required && <span className="text-danger">*</span>}
+                    {field.label}{" "}
+                    {field.required && (
+                      <span className="text-danger">*</span>
+                    )}
                   </Form.Label>
 
-                  {isTextarea ? (
+                  {isPopup ? (
+                    <InputGroup>
+                      <Form.Control
+                        type="text"
+                        value={popup.value}
+                        placeholder={`Select ${field.label}`}
+                        readOnly
+                      />
+                      <Button
+                        variant="outline-secondary"
+                        onClick={popup.onOpen}
+                      >
+                        <BsSearch />
+                      </Button>
+                    </InputGroup>
+                  ) : isTextarea ? (
                     <Form.Control
                       as="textarea"
                       rows={2}
@@ -150,11 +155,6 @@ const KiduCreateAndEdit: React.FC<KiduCreateAndEditProps> = ({
                       value={(formData[field.name] as string) ?? ""}
                       onChange={handleChange}
                       placeholder={field.placeholder || `Enter ${field.label}`}
-                      style={{
-                        WebkitBoxShadow: "0 0 0px 1000px #fff inset",
-                        boxShadow: "0 0 0px 1000px #fff inset",
-                        WebkitTextFillColor: "#000",
-                      }}
                       required={field.required}
                     />
                   ) : isSelect ? (
@@ -182,7 +182,9 @@ const KiduCreateAndEdit: React.FC<KiduCreateAndEditProps> = ({
                     />
                   )}
 
-                  {errors[field.name] && <small className="text-danger">{errors[field.name]}</small>}
+                  {errors[field.name] && (
+                    <small className="text-danger">{errors[field.name]}</small>
+                  )}
                 </Col>
               );
             })}
@@ -196,10 +198,14 @@ const KiduCreateAndEdit: React.FC<KiduCreateAndEditProps> = ({
             </Button>
             <Button
               type="submit"
-              style={{ backgroundColor: "#3B82F6", border: "none", minWidth: "120px" }}
+              style={{
+                backgroundColor: "#3B82F6",
+                border: "none",
+                minWidth: "120px",
+              }}
               disabled={loading}
             >
-              {loading ? "Saving..." : isEditMode ? "Update" : submitText}
+              {loading ? "Saving..." : submitText}
             </Button>
           </div>
         </Form>
@@ -208,4 +214,4 @@ const KiduCreateAndEdit: React.FC<KiduCreateAndEditProps> = ({
   );
 };
 
-export default KiduCreateAndEdit;
+export default KiduCreate;

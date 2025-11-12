@@ -1,10 +1,10 @@
+// src/pages/Settings/Category/CategoryCreate.tsx
 import React, { useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import CategoryService from "../../../../services/SettingsServices/CategoryService";
-import KiduCreateAndEdit from "../../../../components/KiduCreateAndEdit";
-import KiduPrevious from "../../../../components/KiduPrevious";
-import type { Category } from "../../../../types/SettingsTypes/Category.types";
+import KiduCreate from "../../../../components/KiduCreate"; 
+import KiduNote from "../../../../components/KiduNote"; 
 
 const categoryFields = [
   { name: "categoryName", label: "Category Name", type: "text", required: true },
@@ -15,24 +15,23 @@ const CategoryCreate: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleCreate = async (data: Record<string, any>) => {
+  const handleCreate = async (data: Record<string, unknown>) => {
     try {
       setLoading(true);
-      const res = await CategoryService.create(data as Category);
+      const res = await CategoryService.create(data); 
+
       Swal.fire({
         title: "Success!",
-        text: res.message || "Category created successfully.",
+        text: res?.message || "Category created successfully.",
         icon: "success",
         confirmButtonColor: "#3B82F6",
       });
-      navigate("/category"); 
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create category.";
+
+      navigate("/category");
+    } catch (error) {
       Swal.fire({
         title: "Error!",
-        text: message,
+        text: error instanceof Error ? error.message : "Failed to create category.",
         icon: "error",
         confirmButtonColor: "#EF4444",
       });
@@ -42,20 +41,18 @@ const CategoryCreate: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: "20px",
-        backgroundColor: "#f3f3f3",
-      }}
-    >
-      <KiduPrevious />
-      <KiduCreateAndEdit
-        title="Create Category"
-        fields={categoryFields}
-        onSubmit={handleCreate}
-        loading={loading}
-      />
+    <div className="p-3" style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+      <div className="mx-2">
+        <KiduCreate
+          title="Create Category"
+          fields={categoryFields}
+          onSubmit={handleCreate}
+          loading={loading}
+          submitText="Create"
+        >
+          <KiduNote message="You can add attachments after creating the category." />
+        </KiduCreate>
+      </div>
     </div>
   );
 };

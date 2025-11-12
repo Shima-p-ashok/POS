@@ -27,6 +27,8 @@ interface KiduTableProps {
   onPageChange?: (page: number) => void;
   totalRecords?: number;
   currentServerPage?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onRowClick?: (item: any) => void;
 }
 
 const KiduTable: React.FC<KiduTableProps> = ({
@@ -43,6 +45,7 @@ const KiduTable: React.FC<KiduTableProps> = ({
   onPageChange,
   totalRecords,
   currentServerPage,
+  onRowClick,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,12 +71,14 @@ const KiduTable: React.FC<KiduTableProps> = ({
   }, [reversedData, columns, searchTerm, isServerSide, data]);
 
   // 📄 Pagination logic
-  const totalPages = isServerSide 
+  const totalPages = isServerSide
     ? Math.ceil((totalRecords || 0) / rowsPerPage)
     : Math.ceil(filteredData.length / rowsPerPage);
-  
+
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentData = isServerSide ? data : filteredData.slice(startIndex, startIndex + rowsPerPage);
+  const currentData = isServerSide
+    ? data
+    : filteredData.slice(startIndex, startIndex + rowsPerPage);
 
   // Reset to page 1 only when search term changes or data changes (client-side only)
   useEffect(() => {
@@ -99,12 +104,12 @@ const KiduTable: React.FC<KiduTableProps> = ({
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      
+
       // Call parent callback for server-side pagination
       if (isServerSide && onPageChange) {
         onPageChange(page);
       }
-      
+
       // Scroll to table top smoothly
       if (tableRef.current) {
         tableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -114,7 +119,7 @@ const KiduTable: React.FC<KiduTableProps> = ({
 
   const handleSearch = (val: string) => {
     setSearchTerm(val);
-    
+
     // Call parent callback for server-side search
     if (isServerSide && onSearchChange) {
       onSearchChange(val);
@@ -147,10 +152,7 @@ const KiduTable: React.FC<KiduTableProps> = ({
       )}
 
       {/* 📊 Table */}
-      <div 
-        ref={tableRef}
-        className="table-responsive shadow-sm rounded-4 bg-white"
-      >
+      <div ref={tableRef} className="table-responsive shadow-sm rounded-4 bg-white">
         <Table
           striped
           bordered
@@ -196,7 +198,13 @@ const KiduTable: React.FC<KiduTableProps> = ({
               currentData.map((item, index) => {
                 const recordId = item[idKey];
                 return (
-                  <tr key={index}>
+                  <tr
+                    key={index}
+                    style={{
+                      cursor: onRowClick ? "pointer" : "default",
+                    }}
+                    onClick={() => onRowClick && onRowClick(item)}
+                  >
                     {columns.map((col) => (
                       <td key={col.key} style={{ border: "2px solid #dee2e6" }}>
                         {item[col.key] ?? "-"}
@@ -206,6 +214,7 @@ const KiduTable: React.FC<KiduTableProps> = ({
                       <td
                         className="text-center"
                         style={{ border: "2px solid #dee2e6" }}
+                        onClick={(e) => e.stopPropagation()} // prevent triggering row click on buttons
                       >
                         <div className="d-flex justify-content-center gap-2 flex-wrap">
                           {viewRoute && (

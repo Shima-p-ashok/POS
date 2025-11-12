@@ -52,7 +52,6 @@ const CompanyList: React.FC = () => {
     <div className="bg-light" style={{ minHeight: "100vh", padding: "20px" }}>
       <KiduPrevious />
       <KiduTable
-        title="Company Records"
         columns={columns}
         data={companies}
         addButtonLabel="Add New Company"

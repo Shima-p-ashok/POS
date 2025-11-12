@@ -1,5 +1,5 @@
 import React from "react";
-import { Table, Button, Spinner, Card } from "react-bootstrap";
+import { Card, Row, Col, Button, Spinner } from "react-bootstrap";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import KiduPrevious from "./KiduPrevious";
 
@@ -44,14 +44,14 @@ function KiduView<T extends Record<string, any>>({
       </div>
     );
 
-  // === Detect common "name" and "id" fields ===
-  const nameKey = (Object.keys(data).find(k =>
-    ["name", "customerName", "fullName"].includes(k)
-  ) || "") as keyof T;
+// === Auto-detect name/id fields dynamically (ignore Mongo _id) ===
+const nameKey = (Object.keys(data).find(k =>
+  /(name|title|person|company)/i.test(k)
+) || "") as keyof T;
 
-  const idKey = (Object.keys(data).find(k =>
-    ["id", "customerId", "userId"].includes(k)
-  ) || "") as keyof T;
+const idKey = (Object.keys(data).find(k =>
+  /(id|code|number|no)$/i.test(k) && k.toLowerCase() !== "_id"
+) || "") as keyof T;
 
   return (
     <Card className="mx-2 my-3 shadow-sm rounded-3">
@@ -70,7 +70,7 @@ function KiduView<T extends Record<string, any>>({
             <Button
               className="d-flex align-items-center gap-1"
               style={{
-                backgroundColor: "#ffffffff",
+                backgroundColor: "#ffffff",
                 color: "#3B82F6",
                 border: "none",
                 fontWeight: 500,
@@ -97,15 +97,13 @@ function KiduView<T extends Record<string, any>>({
         </div>
       </Card.Header>
 
-      {/* === Body === */}
-      <Card.Body style={{ backgroundColor: "#fff", padding: "2rem", fontFamily: "Urbanist" }}>
-        {/* === Centered name + ID === */}
+      {/* === Body (2-column Row–Column layout) === */}
+      <Card.Body style={{ backgroundColor: "#f7f7f7ff", padding: "2rem", fontFamily: "Urbanist" }}>
+        {/* === Centered Title & ID === */}
         <div className="text-center mb-4">
-          <h5 className="fw-bold mb-1" >
-            {data[nameKey] || "-"}
-          </h5>
+          <h5 className="fw-bold mb-1">{data[nameKey] || "-"}</h5>
           {idKey && (
-            <div  style={{color: "#ff1d1dff", fontSize: "0.9rem" }}>
+            <div style={{ color: "#ff1d1dff", fontSize: "0.9rem" }}>
               <strong>ID :</strong>{" "}
               <span style={{ color: "#ff1d1dff", fontWeight: 600 }}>
                 {data[idKey] || "-"}
@@ -114,38 +112,39 @@ function KiduView<T extends Record<string, any>>({
           )}
         </div>
 
-        {/* === Table === */}
-        <div className="table-responsive">
-          <Table bordered hover responsive className="align-middle mb-0">
-            <tbody>
-              {fields
-                .filter(f => !smallReadOnlyFields.includes(f.key))
-                .map(({ key, label }) => {
-                  let value: React.ReactNode = data[key] ?? "-";
+        {/* === 2 Columns Per Row === */}
+        <Row className="gy-3 ps-3">
+          {fields
+            .filter(f => !smallReadOnlyFields.includes(f.key))
+            .map(({ key, label }) => {
+              let value: React.ReactNode = data[key] ?? "-";
 
-                  if (
-                    (String(key).toLowerCase().includes("date") || key === "createdAt") &&
-                    typeof data[key] === "string"
-                  ) {
-                    value = formatDate ? formatDate(data[key]) : data[key];
-                  }
+              if (
+                (String(key).toLowerCase().includes("date") || key === "createdAt") &&
+                typeof data[key] === "string"
+              ) {
+                value = formatDate ? formatDate(data[key]) : data[key];
+              }
 
-                  if (typeof data[key] === "boolean") {
-                    value = data[key] ? "Yes" : "No";
-                  }
+              if (typeof data[key] === "boolean") {
+                value = data[key] ? "Yes" : "No";
+              }
 
-                  return (
-                    <tr key={String(key)}>
-                      <td style={{ width: "40%", color: "#000000ff", fontWeight: 800 }}>
-                        {label}
-                      </td>
-                      <td style={{ color: "#000" }}>{value}</td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </Table>
-        </div>
+              return (
+                <Col xs={12} md={6} key={String(key)}>
+                  <div className="fw-semibold" style={{ fontSize: "1.03rem" }}>
+                    {label}
+                  </div>
+                  <div
+                    className="text-muted"
+                    style={{ fontSize: "0.9rem", minHeight: "1.2rem" }}
+                  >
+                    {value || "-"}
+                  </div>
+                </Col>
+              );
+            })}
+        </Row>
       </Card.Body>
     </Card>
   );

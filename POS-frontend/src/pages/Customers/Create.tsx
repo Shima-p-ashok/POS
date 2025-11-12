@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import CustomerService from "../../services/CustomerService";
-import KiduCreateAndEdit from "../../components/KiduCreateAndEdit";
+import KiduCreate from "../../components/KiduCreate"; 
 import KiduNote from "../../components/KiduNote";
 
 const customerFields = [
@@ -48,14 +48,15 @@ const CustomerCreate: React.FC = () => {
   return (
     <div className="p-3" style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
       <div className="mx-2">
-        <KiduCreateAndEdit
+        <KiduCreate
           title="Create Customer"
           fields={customerFields}
           onSubmit={handleCreate}
           loading={loading}
+          submitText="Create"
         >
           <KiduNote message="You can add attachments after creating the customer." />
-        </KiduCreateAndEdit>
+        </KiduCreate>
       </div>
     </div>
   );

@@ -1,17 +1,14 @@
+// src/pages/Settings/Category/CategoryView.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import CategoryService from "../../../../services/SettingsServices/CategoryService";
 import type { Category } from "../../../../types/SettingsTypes/Category.types";
-import KiduPrevious from "../../../../components/KiduPrevious";
 import KiduView from "../../../../components/KiduView";
 
 const categoryFields: { key: keyof Category; label: string }[] = [
-  { key: "categoryId", label: "Category ID" },
-  { key: "code", label: "Code" },
   { key: "categoryName", label: "Category Name" },
-  { key: "isActive", label: "Active" },
-  { key: "createdAt", label: "Created At" },
+  { key: "code", label: "Code" },
 ];
 
 const CategoryView: React.FC = () => {
@@ -20,6 +17,7 @@ const CategoryView: React.FC = () => {
   const [data, setData] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /** ✅ Format date nicely */
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
@@ -30,6 +28,7 @@ const CategoryView: React.FC = () => {
     });
   };
 
+  /** ✅ Fetch category details by ID */
   useEffect(() => {
     const fetchCategory = async () => {
       if (!id) return;
@@ -45,6 +44,7 @@ const CategoryView: React.FC = () => {
             icon: "error",
             title: "Error",
             text: res?.message || "Failed to fetch category details.",
+            confirmButtonColor: "#EF4444",
           });
         }
       } catch (err: unknown) {
@@ -55,6 +55,7 @@ const CategoryView: React.FC = () => {
             err instanceof Error
               ? err.message
               : "Error fetching category details.",
+          confirmButtonColor: "#EF4444",
         });
       } finally {
         setLoading(false);
@@ -63,6 +64,7 @@ const CategoryView: React.FC = () => {
     fetchCategory();
   }, [id]);
 
+  /** ✅ Handle delete with confirmation */
   const handleDelete = async () => {
     if (!data?.categoryId) return;
     Swal.fire({
@@ -79,17 +81,28 @@ const CategoryView: React.FC = () => {
           setLoading(true);
           const res = await CategoryService.delete(data.categoryId);
           if (res?.isSuccess) {
-            Swal.fire("Deleted!", "Category deleted successfully.", "success");
+            Swal.fire({
+              title: "Deleted!",
+              text: "Category deleted successfully.",
+              icon: "success",
+              confirmButtonColor: "#3B82F6",
+            });
             navigate("/category");
           } else {
-            Swal.fire("Error", res?.message || "Delete failed.", "error");
+            Swal.fire({
+              title: "Error!",
+              text: res?.message || "Delete failed.",
+              icon: "error",
+              confirmButtonColor: "#EF4444",
+            });
           }
         } catch (err: unknown) {
-          Swal.fire(
-            "Error",
-            err instanceof Error ? err.message : "Delete error.",
-            "error"
-          );
+          Swal.fire({
+            title: "Error!",
+            text: err instanceof Error ? err.message : "Delete error.",
+            icon: "error",
+            confirmButtonColor: "#EF4444",
+          });
         } finally {
           setLoading(false);
         }
@@ -99,7 +112,6 @@ const CategoryView: React.FC = () => {
 
   return (
     <div className="bg-light" style={{ minHeight: "100vh", padding: "20px" }}>
-      <KiduPrevious />
       <KiduView<Category>
         title="Category Details"
         data={data}

@@ -62,7 +62,7 @@ const KiduAuditLog: React.FC<KiduAuditLogProps> = ({ tableName, recordId }) => {
       case "deleted":
         return { color: "#DC2626", bg: "#FEE2E2" }; // red
       default:
-        return { color: "#18575A", bg: "#E0F2FE" }; // blue fallback
+        return { color: "#3B82F6", bg: "#E0F2FE" }; // blue fallback
     }
   };
 
@@ -70,7 +70,7 @@ const KiduAuditLog: React.FC<KiduAuditLogProps> = ({ tableName, recordId }) => {
     <Accordion className="mt-4 mb-4">
       <Accordion.Item eventKey="0">
         <Accordion.Header>
-          <h6 className="mb-0 fw-bold" style={{ color: "#18575A" }}>
+          <h6 className="mb-0 fw-bold" style={{ color: "#3B82F6" }}>
             Audit Logs
           </h6>
         </Accordion.Header>
