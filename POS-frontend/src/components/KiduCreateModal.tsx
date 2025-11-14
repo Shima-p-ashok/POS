@@ -1,4 +1,3 @@
-// src/components/KiduCreateModal.tsx
 import { useState } from "react";
 import { Modal, Button, Spinner, Form } from "react-bootstrap";
 import Swal from "sweetalert2";

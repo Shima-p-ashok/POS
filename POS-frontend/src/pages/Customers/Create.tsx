@@ -7,13 +7,13 @@ import KiduCreate from "../../components/KiduCreate";
 import KiduNote from "../../components/KiduNote";
 
 const customerFields = [
-  { name: "customerName", label: "Customer Name", type: "text", required: true },
-  { name: "contactPerson", label: "Contact Person", type: "text", required: true },
-  { name: "phoneNo", label: "Phone No", type: "number", required: true },
+  { name: "customerName", label: "Customer Name", type: "text", required: true, minLength: 5, },
+  { name: "contactPerson", label: "Contact Person", type: "text", required: true, minLength: 5, },
+  { name: "phoneNo", label: "Phone No", type: "number", required: true, minLength: 10, },
   { name: "email", label: "Email", type: "email", required: true },
-  { name: "website", label: "Website", type: "text", required: true },
-  { name: "address", label: "Address", type: "text", as: "textarea" as const, required: true },
-  { name: "gstNumber", label: "GST / Tax No", type: "text", required: true },
+  { name: "website", label: "Website", type: "url", required: true },
+  { name: "address", label: "Address", type: "text", as: "textarea" as const, required: true, minLength: 5, maxLength: 25, },
+  { name: "gstNumber", label: "GST / Tax No", type: "number", required: true, minLength: 4,  maxLength:4  },
 ];
 
 const CustomerCreate: React.FC = () => {

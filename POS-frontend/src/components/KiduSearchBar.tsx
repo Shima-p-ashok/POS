@@ -1,3 +1,5 @@
+// KiduSearchBar.tsx - NO CHANGES NEEDED
+// ============================================
 import React, { useState } from "react";
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { FaSearch } from "react-icons/fa";
@@ -5,13 +7,13 @@ import { FaSearch } from "react-icons/fa";
 interface KiduSearchBarProps {
   placeholder?: string;
   onSearch: (value: string) => void;
-  width?: string; // optional width prop for flexibility
+  width?: string;
 }
 
 const KiduSearchBar: React.FC<KiduSearchBarProps> = ({
   placeholder = "Search...",
   onSearch,
-  width = "400px", // default reduced width
+  width = "400px",
 }) => {
   const [value, setValue] = useState("");
 

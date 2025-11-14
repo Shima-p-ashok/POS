@@ -1,8 +1,12 @@
+// ============================================
+// KiduPopup.tsx - FINAL FIXED VERSION
+// ============================================
 import React, { useState, useEffect, useMemo } from "react";
-import { Modal, Button, Spinner } from "react-bootstrap";
+import { Modal, Spinner } from "react-bootstrap";
 import HttpService from "../services/Common/HttpService";
 import KiduTable from "./KiduTable";
-import type { CustomResponse } from "../types/Common/ApiTypes"; // ✅ Reusable API type
+import KiduSearchBar from "./KiduSearchBar";
+import type { CustomResponse } from "../types/Common/ApiTypes";
 
 interface KiduPopupProps<T> {
   show: boolean;
@@ -35,45 +39,32 @@ function KiduPopup<T extends Record<string, any>>({
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // 🔹 Fetch data when modal opens
   useEffect(() => {
-    if (show) {
-      setLoading(true);
-
-      HttpService.callApi<CustomResponse<T[]>>(fetchEndpoint, "GET")
-        .then((res) => {
-          // ✅ Robust and type-safe response handler
-          if (Array.isArray(res)) {
-            // Direct array
-            setData(res);
-          } else if (res.isSuccess && Array.isArray(res.value)) {
-            // value contains array
-            setData(res.value);
-          } else if (
-            res.value &&
-            typeof res.value === "object" &&
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            Array.isArray((res.value as any).data)
-          ) {
-            // Nested array inside value.data
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            setData((res.value as any).data);
-          } else {
-            console.warn("⚠️ Unexpected API format:", res);
-          }
-        })
-        .catch((err) => console.error("❌ Error fetching popup data:", err))
-        .finally(() => setLoading(false));
-    }
+    if (!show) return;
+    setQuery("");
+    setLoading(true);
+    HttpService.callApi<CustomResponse<T[]>>(fetchEndpoint, "GET")
+      .then((res) => {
+        if (Array.isArray(res)) setData(res);
+        else if (res.isSuccess && Array.isArray(res.value)) setData(res.value);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        else if (res.value && typeof res.value === "object" && Array.isArray((res.value as any).data))
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setData((res.value as any).data);
+        else console.warn("⚠️ Unexpected API format:", res);
+      })
+      .catch((err) => console.error("❌ Error fetching popup data:", err))
+      .finally(() => setLoading(false));
   }, [show, fetchEndpoint]);
 
-  // 🔍 Filter results
+  // 🔹 Filter data based on search query
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q || !searchKeys?.length) return data;
+    
     return data.filter((item) =>
-      searchKeys.some(
-        (key) => item[key] && item[key].toString().toLowerCase().includes(q)
-      )
+      searchKeys.some((key) => item[key] && item[key].toString().toLowerCase().includes(q))
     );
   }, [query, data, searchKeys]);
 
@@ -84,17 +75,9 @@ function KiduPopup<T extends Record<string, any>>({
 
   return (
     <>
-      <Modal
-        show={show}
-        onHide={handleClose}
-        size="lg"
-        centered
-        className="head-font"
-      >
+      <Modal show={show} onHide={handleClose} size="lg" centered className="head-font">
         <Modal.Header closeButton style={{ backgroundColor: "#f8f9fa" }}>
-          <Modal.Title className="fs-6 fw-semibold text-dark">
-            {title}
-          </Modal.Title>
+          <Modal.Title className="fs-6 fw-semibold text-dark">{title}</Modal.Title>
         </Modal.Header>
 
         <Modal.Body style={{ minHeight: "300px" }}>
@@ -104,35 +87,31 @@ function KiduPopup<T extends Record<string, any>>({
             </div>
           ) : (
             <>
+              {/* 🔹 Search bar always visible at top */}
+              <div className="mb-3 px-2">
+                <KiduSearchBar
+                  onSearch={setQuery}
+                  placeholder="Search records..."
+                />
+              </div>
+
+              {/* ✅ TABLE NOW HANDLES EMPTY STATE + ADD BUTTON */}
               <KiduTable
-                columns={columns.map((col) => ({
-                  key: String(col.key),
-                  label: col.label,
-                }))}
+                columns={columns.map((col) => ({ key: String(col.key), label: col.label }))}
                 data={filtered}
                 showActions={false}
-                showSearch={true}
-                onSearchChange={(val) => setQuery(val)}
+                showSearch={false}
                 onRowClick={handleRowClick}
+                AddModalComponent={AddModalComponent}
+                title={title}
+                onAddClick={() => setShowAddModal(true)}
               />
-              {filtered.length === 0 && AddModalComponent && (
-                <div className="text-center my-4">
-                  <Button
-                    size="sm"
-                    style={{ backgroundColor: "#18575A" }}
-                    className="text-white"
-                    onClick={() => setShowAddModal(true)}
-                  >
-                    + Add New
-                  </Button>
-                </div>
-              )}
             </>
           )}
         </Modal.Body>
       </Modal>
 
-      {/* Optional Add Modal */}
+      {/* 🔹 Add Modal */}
       {AddModalComponent && (
         <AddModalComponent
           show={showAddModal}

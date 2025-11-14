@@ -4,22 +4,25 @@ import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import { BsSearch } from "react-icons/bs";
 import KiduPrevious from "./KiduPrevious";
+import KiduValidation, { ValidationMessage } from "./KiduValidation";
 
 interface FieldShape {
   name: string;
   label: string;
-  type: string;
+  type: "text" | "number" | "textarea" | "email" | "popup";
   as?: "textarea" | "select";
   options?: string[];
   placeholder?: string;
   required?: boolean;
   readOnly?: boolean;
+  minLength?: number;
+  maxLength?: number;
 }
 
 interface PopupHandlers {
   [key: string]: {
-    value: string;          // text to show in field (like categoryName)
-    onOpen: () => void;     // function to open popup
+    value: string;
+    onOpen: () => void;
   };
 }
 
@@ -30,7 +33,7 @@ interface KiduCreateProps {
   loading?: boolean;
   submitText?: string;
   children?: React.ReactNode;
-  popupHandlers?: PopupHandlers; // ✅ added
+  popupHandlers?: PopupHandlers;
 }
 
 const KiduCreate: React.FC<KiduCreateProps> = ({
@@ -51,38 +54,34 @@ const KiduCreate: React.FC<KiduCreateProps> = ({
     setFormData(temp);
   }, [fields]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
-  };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    fields.forEach(f => {
-      const value = (formData[f.name] as string) || "";
-      if (f.required && !value && f.type !== "popup") newErrors[f.name] = `${f.label} is required`;
-      if (f.type === "email" && value) {
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailPattern.test(value)) newErrors[f.name] = "Please enter a valid email address";
-      }
-    });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const fieldRule = fields.find(f => f.name === name);
+    if (fieldRule) {
+      const result = KiduValidation.validate(value, fieldRule);
+      setErrors(prev => ({ ...prev, [name]: result.isValid ? "" : result.message! }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.warn("Please fill all required fields!");
+
+    const newErrors: Record<string, string> = {};
+    fields.forEach(f => {
+      const result = KiduValidation.validate(formData[f.name], f);
+      if (!result.isValid) newErrors[f.name] = result.message!;
+    });
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      toast.warn("Please fix the highlighted errors.");
       return;
     }
+
     try {
       onSubmit(formData);
-    } catch (err) {
-      console.error(err);
+    } catch {
       Swal.fire("Error", "Something went wrong!", "error");
     }
   };
@@ -96,40 +95,24 @@ const KiduCreate: React.FC<KiduCreateProps> = ({
 
   return (
     <Card className="mx-2 my-3 shadow-sm rounded-3">
-      <Card.Header
-        className="d-flex align-items-center gap-3"
-        style={{
-          backgroundColor: "#3B82F6",
-          color: "white",
-          padding: "0.25rem 0.75rem",
-        }}
-      >
+      <Card.Header className="d-flex align-items-center gap-3" style={{ backgroundColor: "#3B82F6", color: "white", padding: "0.25rem 0.75rem" }}>
         <KiduPrevious />
         <h5 className="mb-0 fw-bold">{title}</h5>
       </Card.Header>
 
-      <Card.Body
-        style={{
-          backgroundColor: "#f7f7f7ff",
-          padding: "1.5rem",
-          fontFamily: "Urbanist",
-        }}
-      >
+      <Card.Body style={{ backgroundColor: "#f7f7f7ff", padding: "1.5rem", fontFamily: "Urbanist" }}>
         <Form onSubmit={handleSubmit}>
           <Row>
             {fields.map((field, idx) => {
               const popup = popupHandlers[field.name];
+              const isPopup = field.type === "popup" && popup;
               const isTextarea = field.as === "textarea";
               const isSelect = field.as === "select" && field.options;
-              const isPopup = field.type === "popup" && popup;
 
               return (
                 <Col key={idx} xs={12} md={6} className="mb-3">
                   <Form.Label className="fw-semibold">
-                    {field.label}{" "}
-                    {field.required && (
-                      <span className="text-danger">*</span>
-                    )}
+                    {field.label} {field.required && <span className="text-danger">*</span>}
                   </Form.Label>
 
                   {isPopup ? (
@@ -139,11 +122,11 @@ const KiduCreate: React.FC<KiduCreateProps> = ({
                         value={popup.value}
                         placeholder={`Select ${field.label}`}
                         readOnly
+                        style={{
+                          borderColor: errors[field.name] ? "#EF4444" : "#dee2e6",
+                        }}
                       />
-                      <Button
-                        variant="outline-secondary"
-                        onClick={popup.onOpen}
-                      >
+                      <Button variant="outline-primary" onClick={popup.onOpen}>
                         <BsSearch />
                       </Button>
                     </InputGroup>
@@ -153,16 +136,20 @@ const KiduCreate: React.FC<KiduCreateProps> = ({
                       rows={2}
                       name={field.name}
                       value={(formData[field.name] as string) ?? ""}
-                      onChange={handleChange}
+                      onChange={e => handleChange(field.name, e.target.value)}
                       placeholder={field.placeholder || `Enter ${field.label}`}
-                      required={field.required}
+                      style={{
+                        borderColor: errors[field.name] ? "#EF4444" : "#dee2e6",
+                      }}
                     />
                   ) : isSelect ? (
                     <Form.Select
                       name={field.name}
                       value={(formData[field.name] as string) ?? ""}
-                      onChange={handleChange}
-                      required={field.required}
+                      onChange={e => handleChange(field.name, e.target.value)}
+                      style={{
+                        borderColor: errors[field.name] ? "#EF4444" : "#dee2e6",
+                      }}
                     >
                       <option value="">Select {field.label}</option>
                       {field.options!.map((opt, i) => (
@@ -176,15 +163,14 @@ const KiduCreate: React.FC<KiduCreateProps> = ({
                       type={field.type}
                       name={field.name}
                       value={(formData[field.name] as string) ?? ""}
-                      onChange={handleChange}
+                      onChange={e => handleChange(field.name, e.target.value)}
                       placeholder={field.placeholder || `Enter ${field.label}`}
-                      required={field.required}
+                      style={{
+                        borderColor: errors[field.name] ? "#EF4444" : "#dee2e6",
+                      }}
                     />
                   )}
-
-                  {errors[field.name] && (
-                    <small className="text-danger">{errors[field.name]}</small>
-                  )}
+                  <ValidationMessage message={errors[field.name]} />
                 </Col>
               );
             })}
@@ -196,15 +182,7 @@ const KiduCreate: React.FC<KiduCreateProps> = ({
             <Button variant="outline-secondary" onClick={handleReset}>
               Reset
             </Button>
-            <Button
-              type="submit"
-              style={{
-                backgroundColor: "#3B82F6",
-                border: "none",
-                minWidth: "120px",
-              }}
-              disabled={loading}
-            >
+            <Button type="submit" style={{ backgroundColor: "#3B82F6", border: "none", minWidth: "120px" }} disabled={loading}>
               {loading ? "Saving..." : submitText}
             </Button>
           </div>

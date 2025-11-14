@@ -19,9 +19,11 @@ export const getAttachments = async (tableName: string, recordId: string | numbe
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: ApiResponse<any[]> = await response.json();
 
     if (result.isSucess && Array.isArray(result.value)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return result.value.map((item: any) => ({
         attachmentId: item.attachmentId,
         tableName: item.tableName,
@@ -52,7 +54,7 @@ export const uploadAttachment = async (formData: FormData): Promise<Attachment> 
       const errorData = await response.json().catch(() => null);
       throw new Error(errorData?.message || `Upload failed with status: ${response.status}`);
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: ApiResponse<any> = await response.json();
     if (result.isSucess && result.value) {
       const item = result.value;
@@ -87,6 +89,7 @@ export const deleteAttachment = async (attachmentId: number, deletedBy: string):
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: ApiResponse<any> = await response.json();
     if (!result.isSucess) throw new Error(result.customMessage || "Delete failed");
     console.log("Attachment deleted successfully");
@@ -126,6 +129,7 @@ export const getAttachmentById = async (attachmentId: number): Promise<Attachmen
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: ApiResponse<any> = await response.json();
 
     if (result.isSucess && result.value) {

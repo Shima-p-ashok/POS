@@ -1,3 +1,6 @@
+// ============================================
+// KiduTable.tsx - FINAL FIXED VERSION
+// ============================================
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Table, Container, Row, Col, Button, Pagination } from "react-bootstrap";
 import { FaEdit, FaEye } from "react-icons/fa";
@@ -5,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import KiduButton from "../components/KiduButton";
 import KiduDownload from "../components/KiduDownload";
 import KiduSearchBar from "../components/KiduSearchBar";
+import KiduPopupButton from "../components/KiduPopupButton";
 
 interface Column {
   key: string;
@@ -29,6 +33,13 @@ interface KiduTableProps {
   currentServerPage?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onRowClick?: (item: any) => void;
+  AddModalComponent?: React.ComponentType<{
+    show: boolean;
+    handleClose: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onAdded: (newItem: any) => void;
+  }>;
+  title?: string;
 }
 
 const KiduTable: React.FC<KiduTableProps> = ({
@@ -46,6 +57,9 @@ const KiduTable: React.FC<KiduTableProps> = ({
   totalRecords,
   currentServerPage,
   onRowClick,
+  AddModalComponent,
+  title,
+  onAddClick,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -120,8 +134,8 @@ const KiduTable: React.FC<KiduTableProps> = ({
   const handleSearch = (val: string) => {
     setSearchTerm(val);
 
-    // Call parent callback for server-side search
-    if (isServerSide && onSearchChange) {
+    // ✅ FIXED: Call parent callback whenever provided (for both server-side AND popup)
+    if (onSearchChange) {
       onSearchChange(val);
     }
   };
@@ -145,7 +159,7 @@ const KiduTable: React.FC<KiduTableProps> = ({
               md="auto"
               className="d-flex justify-content-md-end justify-content-start p-0 mt-2 mt-md-0"
             >
-              <KiduButton label={addButtonLabel}  />
+              <KiduButton label={addButtonLabel} />
             </Col>
           )}
         </Row>
@@ -265,10 +279,19 @@ const KiduTable: React.FC<KiduTableProps> = ({
               <tr>
                 <td
                   colSpan={columns.length + (showActions ? 1 : 0)}
-                  className="text-center py-4 text-muted"
+                  className="text-center py-5"
                   style={{ border: "2px solid #dee2e6" }}
                 >
-                  No matching records found
+                  <div className="d-flex flex-column justify-content-center align-items-center">
+                    <p className="text-muted mb-3">No matching records found</p>
+                    {AddModalComponent && (
+                      <KiduPopupButton
+                        label={`Add ${title ? title.replace("Select ", "") : ""}`}
+                        onClick={() => onAddClick?.()}
+                      />
+                    )}
+
+                  </div>
                 </td>
               </tr>
             )}

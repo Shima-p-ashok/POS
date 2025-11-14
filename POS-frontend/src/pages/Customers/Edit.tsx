@@ -10,13 +10,13 @@ import type { Customer } from "../../types/Customer.types";
 
 const customerFields = [
   { name: "customerId", label: "Customer ID", type: "number", readOnly: true },
-  { name: "customerName", label: "Customer Name", type: "text", required: true },
-  { name: "contactPerson", label: "Contact Person", type: "text", required: true },
-  { name: "phoneNo", label: "Phone No", type: "text", required: true },
+  { name: "customerName", label: "Customer Name", type: "text", required: true, minLength: 5, },
+  { name: "contactPerson", label: "Contact Person", type: "text", required: true, minLength: 5, },
+  { name: "phoneNo", label: "Phone No", type: "number", required: true, minLength: 10, },
   { name: "email", label: "Email", type: "email", required: true },
-  { name: "website", label: "Website", type: "text", required: true },
-  { name: "gstNumber", label: "GST / Tax No", type: "text", required: true },
-  { name: "address", label: "Address", type: "text", as: "textarea" as const, required: true },
+  { name: "website", label: "Website", type: "url", required: true },
+  { name: "gstNumber", label: "GST / Tax No", type: "number", required: true, minLength: 4, maxLength:4 },
+  { name: "address", label: "Address", type: "text", as: "textarea" as const, required: true, maxLength: 25, minLength: 5, },
 ];
 
 const CustomerEdit: React.FC = () => {

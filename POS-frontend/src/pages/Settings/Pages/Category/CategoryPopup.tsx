@@ -1,4 +1,3 @@
-// src/pages/Settings/Category/CategoryPopup.tsx
 import React from "react";
 import KiduPopup from "../../../../components/KiduPopup";
 import { API_ENDPOINTS } from "../../../../constants/API_ENDPOINTS";

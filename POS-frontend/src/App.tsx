@@ -53,11 +53,11 @@ import CategoryCreate from "./pages/Settings/Pages/Category/Create";
 import CategoryView from "./pages/Settings/Pages/Category/View";
 import CategoryEdit from "./pages/Settings/Pages/Category/Edit";
 
-// // Company
-// import CompanyList from "./pages/Settings/Pages/Company/List";
-// import CompanyCreate from "./pages/Settings/Pages/Company/Create";
-// import CompanyView from "./pages/Settings/Pages/Company/View";
-// import CompanyEdit from "./pages/Settings/Pages/Company/Edit";
+// Company
+import CompanyList from "./pages/Settings/Pages/Company/List";
+import CompanyCreate from "./pages/Settings/Pages/Company/Create";
+import CompanyView from "./pages/Settings/Pages/Company/View";
+import CompanyEdit from "./pages/Settings/Pages/Company/Edit";
 
 //Product
 import ProductList from "./pages/Settings/Pages/Product/List";
@@ -125,10 +125,10 @@ function App() {
         <Route path="/category-edit/:id" element={<CategoryEdit />} /> 
 
         {/* Company */}
-        {/* <Route path="/company" element={<CompanyList />} />
+        <Route path="/company" element={<CompanyList />} />
         <Route path="/company-create" element={<CompanyCreate />} />
         <Route path="/company-view/:id" element={<CompanyView />} />
-        <Route path="/company-edit/:id" element={<CompanyEdit />} />  */}
+        <Route path="/company-edit/:id" element={<CompanyEdit />} /> 
 
         {/* Product */}
         <Route path="/product" element={<ProductList />} />
